@@ -69,20 +69,21 @@ Device opened
 Port path: 1
 libusb_set_auto_detach_kernel_driver() returned 0
 Claimed interface
-In do_async_interrupt_transfer()
-Read successful! 18 bytes: 20003C0E400000000000860740FF24FE8BFE
+In do_sync_interrupt_transfer()
+Read successful! 18 bytes: 20007A0E500000000000910998FF72F9EBF9
   type: 0x20
   const_0: 0x00
-  id: 0x3C
+  id: 0x7A
   length: 0x0E
-  a,b,x,y: 0,0,1,0
+  a,b,x,y: 1,0,1,0
   sync,start,back: 0,0,0
   shoulder left,right: 0,0
   thumb left,right: 0,0
   dpad up,down,left,right: 0,0,0,0
   trigger left,right: 0,0
-  lthumb x,y: 1926,-192
-  rthumb x,y: -476,-373
+  lthumb x,y: 2449,-104
+  rthumb x,y: -1678,-1557
+Rumble succeeded!
 Button X pressed
 Released interface
 ```
