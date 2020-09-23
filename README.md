@@ -61,8 +61,9 @@ $ ./gamepad
 
 ### Usage
 Play with the buttons on your controller. You should see some text output.
-To exit the program, press the X button on your controller. Below is a
-sample run of the program:
+To activate rumble, press the A button. To exit the program, press the
+X button. Below is a sample run of the program when both the A button
+and the X button are pressed at the same time:
 ```
 libusb v1.0.23.11397 (http://libusb.info)
 Device opened
