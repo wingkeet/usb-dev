@@ -84,7 +84,6 @@ Read successful! 18 bytes: 20007A0E500000000000910998FF72F9EBF9
   trigger left,right: 0,0
   lthumb x,y: 2449,-104
   rthumb x,y: -1678,-1557
-Button X pressed
 Released interface
 ```
 
