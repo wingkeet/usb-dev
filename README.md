@@ -94,5 +94,6 @@ There is no license. You may use these sample programs however you wish.
 - https://libusb.info/
 - https://linuxconfig.org/tutorial-on-how-to-write-basic-udev-rules-in-linux
 - https://www.dreamincode.net/forums/topic/148707-introduction-to-using-libusb-10/
+- https://github.com/paroj/xpad
 - https://github.com/quantus/xbox-one-controller-protocol
 - https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
