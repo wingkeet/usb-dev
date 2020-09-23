@@ -117,7 +117,7 @@ void print_gamepad(const struct gamepad_t *gamepad) {
     printf("  rthumb x,y: %d,%d\n", gamepad->rthumb_x, gamepad->rthumb_y);
 }
 
-void rumble(libusb_device_handle *devh) {
+void rumble(libusb_device_handle *devh, uint8_t strong, uint8_t weak) {
     uint8_t data[] = {
         0x09, // activate rumble
         0x00,
@@ -127,8 +127,8 @@ void rumble(libusb_device_handle *devh) {
         0x0F,
         0x00,
         0x00,
-        0x20, // left actuator
-        0x20, // right actuator
+        strong, // left actuator
+        weak, // right actuator
         0x10, // on period
         0x00, // off period
         0x01  // repeat count
@@ -220,7 +220,7 @@ void do_sync_interrupt_transfer(libusb_device_handle *devh) {
                 print_gamepad(&gamepad);
 
                 if (gamepad.a) {
-                    rumble(devh);
+                    rumble(devh, 0x20, 0x20);
                 }
                 if (gamepad.x) {
                     puts("Button X pressed");
