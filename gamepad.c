@@ -117,31 +117,6 @@ void print_gamepad(const struct gamepad_t *gamepad) {
     printf("  rthumb x,y: %d,%d\n", gamepad->rthumb_x, gamepad->rthumb_y);
 }
 
-void rumble(libusb_device_handle *devh, uint8_t strong, uint8_t weak) {
-    uint8_t data[] = {
-        0x09, // activate rumble
-        0x00,
-        0x00,
-        0x09, // length
-        0x00,
-        0x0F,
-        0x00,
-        0x00,
-        strong, // left actuator
-        weak, // right actuator
-        0x10, // on period
-        0x00, // off period
-        0x01  // repeat count
-    };
-    int actual; // how many bytes were actually transferred
-    int r;
-
-     // My device's out endpoint is 2
-    r = libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_OUT),
-        data, sizeof(data), &actual, 0);
-    puts(r == LIBUSB_SUCCESS ? "Rumble succeeded!" : "Rumble failed!");
-}
-
 void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         printf("Transfer failed with status = %d\n", transfer->status);
@@ -195,6 +170,30 @@ void do_async_interrupt_transfer(libusb_device_handle *devh) {
     }
 
     libusb_free_transfer(transfer);
+}
+
+void rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
+    uint8_t data[] = {
+        0x09, // activate rumble
+        0x00,
+        0x00,
+        0x09, // length
+        0x00,
+        0x0F,
+        0x00,
+        0x00,
+        left, // low-frequency motor
+        right, // high-frequency motor
+        0x10, // on period
+        0x00, // off period
+        0x01  // repeat count
+    };
+    int actual; // how many bytes were actually transferred
+    int r __attribute__((unused));
+
+     // My device's out endpoint is 2
+    r = libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_OUT),
+        data, sizeof(data), &actual, 0);
 }
 
 void do_sync_interrupt_transfer(libusb_device_handle *devh) {
