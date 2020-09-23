@@ -222,7 +222,6 @@ void do_sync_interrupt_transfer(libusb_device_handle *devh) {
                     rumble(devh, 0x20, 0x20);
                 }
                 if (gamepad.x) {
-                    puts("Button X pressed");
                     break;
                 }
             }
