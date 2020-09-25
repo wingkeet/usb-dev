@@ -52,8 +52,8 @@ struct gamepad_t {
     uint8_t x : 1;
     uint8_t y : 1;
     uint8_t sync : 1;
-    uint8_t start : 1;
-    uint8_t back : 1;
+    uint8_t menu : 1;
+    uint8_t view : 1;
     uint8_t thumb_left : 1;
     uint8_t thumb_right : 1;
     uint8_t shoulder_left : 1;
@@ -83,8 +83,8 @@ void data_to_gamepad(const uint8_t data[], struct gamepad_t *gamepad) {
     gamepad->x = data[4] & 0x40 ? 1 : 0;
     gamepad->y = data[4] & 0x80 ? 1 : 0;
     gamepad->sync = data[4] & 0x01 ? 1 : 0;
-    gamepad->start = data[4] & 0x04 ? 1 : 0;
-    gamepad->back = data[4] & 0x08 ? 1 : 0;
+    gamepad->menu = data[4] & 0x04 ? 1 : 0;
+    gamepad->view = data[4] & 0x08 ? 1 : 0;
     gamepad->shoulder_left = data[5] & 0x10 ? 1 : 0;
     gamepad->shoulder_right = data[5] & 0x20 ? 1 : 0;
     gamepad->thumb_left = data[5] & 0x40 ? 1 : 0;
@@ -107,7 +107,7 @@ void print_gamepad(const struct gamepad_t *gamepad) {
     printf("  id: 0x%02X\n", gamepad->id);
     printf("  length: 0x%02X\n", gamepad->length);
     printf("  a,b,x,y: %u,%u,%u,%u\n", gamepad->a, gamepad->b, gamepad->x, gamepad->y);
-    printf("  sync,start,back: %u,%u,%u\n", gamepad->sync, gamepad->start, gamepad->back);
+    printf("  sync,menu,view: %u,%u,%u\n", gamepad->sync, gamepad->menu, gamepad->view);
     printf("  shoulder left,right: %u,%u\n", gamepad->shoulder_left, gamepad->shoulder_right);
     printf("  thumb left,right: %u,%u\n", gamepad->thumb_left, gamepad->thumb_right);
     printf("  dpad up,down,left,right: %u,%u,%u,%u\n",

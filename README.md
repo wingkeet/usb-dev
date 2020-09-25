@@ -77,7 +77,7 @@ Read successful! 18 bytes: 20007A0E500000000000910998FF72F9EBF9
   id: 0x7A
   length: 0x0E
   a,b,x,y: 1,0,1,0
-  sync,start,back: 0,0,0
+  sync,menu,view: 0,0,0
   shoulder left,right: 0,0
   thumb left,right: 0,0
   dpad up,down,left,right: 0,0,0,0
