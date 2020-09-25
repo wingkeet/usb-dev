@@ -71,19 +71,19 @@ Port path: 1
 libusb_set_auto_detach_kernel_driver() returned 0
 Claimed interface
 In do_sync_interrupt_transfer()
-Read successful! 18 bytes: 20007A0E500000000000910998FF72F9EBF9
+Read successful! 18 bytes: 2000270E5000000000002FFDF8FE2DFE8FF3
   type: 0x20
   const_0: 0x00
-  id: 0x7A
+  id: 0x27
   length: 0x0E
   a,b,x,y: 1,0,1,0
   sync,menu,view: 0,0,0
-  shoulder left,right: 0,0
-  thumb left,right: 0,0
+  bumper left,right: 0,0
+  stick left,right: 0,0
   dpad up,down,left,right: 0,0,0,0
   trigger left,right: 0,0
-  lthumb x,y: 2449,-104
-  rthumb x,y: -1678,-1557
+  lstick x,y: -721,-264
+  rstick x,y: -467,-3185
 Released interface
 ```
 
@@ -98,3 +98,4 @@ There is no license. You may use these sample programs however you wish.
 - https://github.com/quantus/xbox-one-controller-protocol
 - https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
 - https://en.wikipedia.org/wiki/Xbox_One_controller
+- https://support.xbox.com/help/hardware-network/controller/xbox-one-wireless-controller

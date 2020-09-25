@@ -54,22 +54,22 @@ struct gamepad_t {
     uint8_t sync : 1;
     uint8_t menu : 1;
     uint8_t view : 1;
-    uint8_t thumb_left : 1;
-    uint8_t thumb_right : 1;
-    uint8_t shoulder_left : 1;
-    uint8_t shoulder_right : 1;
+    uint8_t lstick : 1;
+    uint8_t rstick : 1;
+    uint8_t lbumper : 1;
+    uint8_t rbumper : 1;
     uint8_t dpad_up : 1;
     uint8_t dpad_down : 1;
     uint8_t dpad_left : 1;
     uint8_t dpad_right : 1;
 
     // analog controls
-    uint8_t trigger_left; // 0..255
-    uint8_t trigger_right; // 0..255
-    int16_t lthumb_x; // -32768..32767
-    int16_t lthumb_y; // -32768..32767
-    int16_t rthumb_x; // -32768..32767
-    int16_t rthumb_y; // -32768..32767
+    uint8_t ltrigger; // [0,255]
+    uint8_t rtrigger; // [0,255]
+    int16_t lstick_x; // [-32768,32767]
+    int16_t lstick_y; // [-32768,32767]
+    int16_t rstick_x; // [-32768,32767]
+    int16_t rstick_y; // [-32768,32767]
 };
 
 // The `data` array must be at least 18 bytes in length
@@ -85,20 +85,20 @@ void data_to_gamepad(const uint8_t data[], struct gamepad_t *gamepad) {
     gamepad->sync = data[4] & 0x01 ? 1 : 0;
     gamepad->menu = data[4] & 0x04 ? 1 : 0;
     gamepad->view = data[4] & 0x08 ? 1 : 0;
-    gamepad->shoulder_left = data[5] & 0x10 ? 1 : 0;
-    gamepad->shoulder_right = data[5] & 0x20 ? 1 : 0;
-    gamepad->thumb_left = data[5] & 0x40 ? 1 : 0;
-    gamepad->thumb_right = data[5] & 0x80 ? 1 : 0;
+    gamepad->lbumper = data[5] & 0x10 ? 1 : 0;
+    gamepad->rbumper = data[5] & 0x20 ? 1 : 0;
+    gamepad->lstick = data[5] & 0x40 ? 1 : 0;
+    gamepad->rstick = data[5] & 0x80 ? 1 : 0;
     gamepad->dpad_up = data[5] & 0x01 ? 1 : 0;
     gamepad->dpad_down = data[5] & 0x02 ? 1 : 0;
     gamepad->dpad_left = data[5] & 0x04 ? 1 : 0;
     gamepad->dpad_right = data[5] & 0x08 ? 1 : 0;
-    gamepad->trigger_left = data[6];
-    gamepad->trigger_right = data[8];
-    gamepad->lthumb_x = * (int16_t *) &data[10];
-    gamepad->lthumb_y = * (int16_t *) &data[12];
-    gamepad->rthumb_x = * (int16_t *) &data[14];
-    gamepad->rthumb_y = * (int16_t *) &data[16];
+    gamepad->ltrigger = data[6];
+    gamepad->rtrigger = data[8];
+    gamepad->lstick_x = * (int16_t *) &data[10];
+    gamepad->lstick_y = * (int16_t *) &data[12];
+    gamepad->rstick_x = * (int16_t *) &data[14];
+    gamepad->rstick_y = * (int16_t *) &data[16];
 }
 
 void print_gamepad(const struct gamepad_t *gamepad) {
@@ -108,13 +108,13 @@ void print_gamepad(const struct gamepad_t *gamepad) {
     printf("  length: 0x%02X\n", gamepad->length);
     printf("  a,b,x,y: %u,%u,%u,%u\n", gamepad->a, gamepad->b, gamepad->x, gamepad->y);
     printf("  sync,menu,view: %u,%u,%u\n", gamepad->sync, gamepad->menu, gamepad->view);
-    printf("  shoulder left,right: %u,%u\n", gamepad->shoulder_left, gamepad->shoulder_right);
-    printf("  thumb left,right: %u,%u\n", gamepad->thumb_left, gamepad->thumb_right);
+    printf("  bumper left,right: %u,%u\n", gamepad->lbumper, gamepad->rbumper);
+    printf("  stick left,right: %u,%u\n", gamepad->lstick, gamepad->rstick);
     printf("  dpad up,down,left,right: %u,%u,%u,%u\n",
         gamepad->dpad_up, gamepad->dpad_down, gamepad->dpad_left, gamepad->dpad_right);
-    printf("  trigger left,right: %u,%u\n", gamepad->trigger_left, gamepad->trigger_right);
-    printf("  lthumb x,y: %d,%d\n", gamepad->lthumb_x, gamepad->lthumb_y);
-    printf("  rthumb x,y: %d,%d\n", gamepad->rthumb_x, gamepad->rthumb_y);
+    printf("  trigger left,right: %u,%u\n", gamepad->ltrigger, gamepad->rtrigger);
+    printf("  lstick x,y: %d,%d\n", gamepad->lstick_x, gamepad->lstick_y);
+    printf("  rstick x,y: %d,%d\n", gamepad->rstick_x, gamepad->rstick_y);
 }
 
 void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
