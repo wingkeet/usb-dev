@@ -97,3 +97,4 @@ There is no license. You may use these sample programs however you wish.
 - https://github.com/paroj/xpad
 - https://github.com/quantus/xbox-one-controller-protocol
 - https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
+- https://en.wikipedia.org/wiki/Xbox_One_controller
