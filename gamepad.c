@@ -134,7 +134,6 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
         print_gamepad(&gamepad);
 
         if (gamepad.x) {
-            puts("Button X pressed");
             int *completed = transfer->user_data;
             *completed = 1;
         }
@@ -143,7 +142,7 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
 
 void do_async_interrupt_transfer(libusb_device_handle *devh) {
     uint8_t data[18]; // data buffer
-    int r;
+    int rc;
     int completed = 0;
 
     printf("In %s()\n", __func__);
@@ -157,14 +156,14 @@ void do_async_interrupt_transfer(libusb_device_handle *devh) {
         data, sizeof(data), transfer_callback, &completed, 0);
 
     while (!completed) {
-        r = libusb_submit_transfer(transfer);
-        if (r != LIBUSB_SUCCESS) {
-            printf("libusb_submit_transfer() failed with r = %d\n", r);
+        rc = libusb_submit_transfer(transfer);
+        if (rc != LIBUSB_SUCCESS) {
+            printf("libusb_submit_transfer() failed with r = %d\n", rc);
             break;
         }
-        r = libusb_handle_events_completed(NULL, &completed);
-        if (r != LIBUSB_SUCCESS) {
-            printf("libusb_handle_events_completed() failed with r = %d\n", r);
+        rc = libusb_handle_events_completed(NULL, &completed);
+        if (rc != LIBUSB_SUCCESS) {
+            printf("libusb_handle_events_completed() failed with r = %d\n", rc);
             break;
         }
     }
@@ -189,26 +188,24 @@ int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
         0x01  // repeat count
     };
     int actual; // how many bytes were actually transferred
-    int r;
 
      // My device's out endpoint is 2
-    r = libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_OUT),
+    return libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_OUT),
         data, sizeof(data), &actual, 0);
-    return r;
 }
 
 void do_sync_interrupt_transfer(libusb_device_handle *devh) {
     uint8_t data[18]; // data buffer
     int actual; // how many bytes were actually transferred
-    int r;
+    int rc;
 
     printf("In %s()\n", __func__);
 
     while (true) {
          // My device's in endpoint is 2
-        r = libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_IN),
+        rc = libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_IN),
             data, sizeof(data), &actual, 0);
-        if (r == LIBUSB_SUCCESS) {
+        if (rc == LIBUSB_SUCCESS) {
             printf("Read successful! %d bytes: ", actual);
             printhex(data, actual);
             putchar('\n');
@@ -235,13 +232,13 @@ void do_sync_interrupt_transfer(libusb_device_handle *devh) {
 
 int main(void) {
     libusb_device_handle *devh = NULL; // device handle
-    int r; // for return values
+    int rc; // return code
 
     print_libusb_version();
 
-    r = libusb_init(NULL); // initialize libusb
-    if (r != LIBUSB_SUCCESS) {
-        printf("Init error %d\n", r);
+    rc = libusb_init(NULL); // initialize libusb
+    if (rc != LIBUSB_SUCCESS) {
+        printf("Init error %d\n", rc);
         return 1;
     }
     libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_WARNING);
@@ -258,12 +255,12 @@ int main(void) {
     print_port_path(devh);
 
     // Let libusb handle detaching/attaching kernel driver for us
-    r = libusb_set_auto_detach_kernel_driver(devh, 1);
-    printf("libusb_set_auto_detach_kernel_driver() returned %d\n", r);
+    rc = libusb_set_auto_detach_kernel_driver(devh, 1);
+    printf("libusb_set_auto_detach_kernel_driver() returned %d\n", rc);
 
     // Claim interface 0 (the first) of device (mine had just 1)
-    r = libusb_claim_interface(devh, 0);
-    if (r != LIBUSB_SUCCESS) {
+    rc = libusb_claim_interface(devh, 0);
+    if (rc != LIBUSB_SUCCESS) {
         puts("Cannot claim interface");
         libusb_close(devh);
         libusb_exit(NULL);
@@ -275,8 +272,8 @@ int main(void) {
     do_sync_interrupt_transfer(devh);
 
     // Shutting down from here onwards
-    r = libusb_release_interface(devh, 0); // release the claimed interface
-    puts(r == LIBUSB_SUCCESS ? "Released interface" : "Cannot release interface");
+    rc = libusb_release_interface(devh, 0); // release the claimed interface
+    puts(rc == LIBUSB_SUCCESS ? "Released interface" : "Cannot release interface");
     libusb_close(devh); // close the device we opened
     libusb_exit(NULL); // deinitialize libusb
     return 0;
