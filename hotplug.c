@@ -2,8 +2,14 @@
 #include <stdlib.h>
 #include <libusb-1.0/libusb.h>
 
-static int completed = 0;
 static libusb_device_handle *devh = NULL;
+
+enum {
+    EVENT_DEVICE_ARRIVED = 1,
+    EVENT_DEVICE_LEFT = 2,
+    EVENT_TRANSFER_COMPLETED = 3,
+    EVENT_BUTTON_X_PRESSED = 4
+};
 
 int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
     libusb_hotplug_event event, void *user_data)
@@ -19,7 +25,7 @@ int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
             puts("Could not open USB device");
         }
         int *completed = user_data;
-        *completed = 1;
+        *completed = EVENT_DEVICE_ARRIVED;
     }
     else if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT) {
         if (devh != NULL) {
@@ -27,7 +33,7 @@ int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
             devh = NULL;
         }
         int *completed = user_data;
-        *completed = 2;
+        *completed = EVENT_DEVICE_LEFT;
     }
     else {
         printf("Unhandled event %d\n", event);
@@ -114,7 +120,7 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
     putchar('\n');
 
     int *completed = transfer->user_data;
-    *completed = 3;
+    *completed = EVENT_TRANSFER_COMPLETED;
 
     if (transfer->actual_length == 18 && transfer->buffer[0] == 0x20) {
         // We received button data
@@ -122,7 +128,7 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
         data_to_gamepad(transfer->buffer, &gamepad);
 
         if (gamepad.x) {
-            *completed = 4;
+            *completed = EVENT_BUTTON_X_PRESSED;
         }
     }
 }
@@ -131,6 +137,7 @@ int main(void)
 {
     libusb_hotplug_callback_handle callback_handle = 0;
     uint8_t data[18]; // data buffer
+    int completed = 0;
     int rc;
 
     libusb_init(NULL);
@@ -171,7 +178,7 @@ int main(void)
         completed = 0;
         libusb_handle_events_completed(NULL, &completed);
 
-        if (completed == 1) {
+        if (completed == EVENT_DEVICE_ARRIVED) {
             puts("Device arrived");
             rc = libusb_set_auto_detach_kernel_driver(devh, 1);
             rc = libusb_claim_interface(devh, 0);
@@ -182,17 +189,16 @@ int main(void)
                 printf("libusb_submit_transfer() failed with rc = %s\n", libusb_error_name(rc));
             }
         }
-        else if (completed == 2) {
+        else if (completed == EVENT_DEVICE_LEFT) {
             puts("Device left");
         }
-        else if (completed == 3) {
+        else if (completed == EVENT_TRANSFER_COMPLETED) {
             rc = libusb_submit_transfer(transfer);
             if (rc != LIBUSB_SUCCESS) {
                 printf("libusb_submit_transfer() failed with rc = %s\n", libusb_error_name(rc));
             }
         }
-        else if (completed == 4) {
-            // Button X was pressed
+        else if (completed == EVENT_BUTTON_X_PRESSED) {
             break;
         }
     }
