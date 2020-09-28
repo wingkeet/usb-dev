@@ -109,6 +109,16 @@ void data_to_gamepad(const uint8_t data[], struct gamepad_t *gamepad) {
     gamepad->rstick_y = * (int16_t *) &data[16];
 }
 
+// Initialize controller (with input)
+int init_device(libusb_device_handle *devh) {
+    uint8_t data[] = { 0x05, 0x20, 0x00, 0x01, 0x00 };
+    int actual; // how many bytes were actually transferred
+
+    // My device's out endpoint is 2
+    return libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_OUT),
+        data, sizeof(data), &actual, 0);
+}
+
 void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         printf("Transfer failed with status = %s\n", libusb_error_name(transfer->status));
@@ -136,7 +146,7 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
 int main(void)
 {
     libusb_hotplug_callback_handle callback_handle = 0;
-    uint8_t data[18]; // data buffer
+    uint8_t data[64]; // data buffer
     int completed = 0;
     int rc;
 
@@ -165,6 +175,7 @@ int main(void)
     if (devh != NULL) {
         rc = libusb_set_auto_detach_kernel_driver(devh, 1);
         rc = libusb_claim_interface(devh, 0);
+        rc = init_device(devh);
         libusb_fill_interrupt_transfer(transfer, devh, (2 | LIBUSB_ENDPOINT_IN),
             data, sizeof(data), transfer_callback, &completed, 0);
         rc = libusb_submit_transfer(transfer);
@@ -182,6 +193,7 @@ int main(void)
             puts("Device arrived");
             rc = libusb_set_auto_detach_kernel_driver(devh, 1);
             rc = libusb_claim_interface(devh, 0);
+            rc = init_device(devh);
             libusb_fill_interrupt_transfer(transfer, devh, (2 | LIBUSB_ENDPOINT_IN),
                 data, sizeof(data), transfer_callback, &completed, 0);
             rc = libusb_submit_transfer(transfer);
@@ -208,4 +220,4 @@ int main(void)
     libusb_hotplug_deregister_callback(NULL, callback_handle);
     libusb_exit(NULL); // deinitialize libusb
     return 0;
-}    
+}
