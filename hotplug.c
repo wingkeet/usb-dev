@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <libusb-1.0/libusb.h>
 
 static libusb_device_handle *devh = NULL;
@@ -8,14 +9,48 @@ enum {
     EVENT_DEVICE_ARRIVED = 1,
     EVENT_DEVICE_LEFT = 2,
     EVENT_TRANSFER_COMPLETED = 3,
-    EVENT_BUTTON_X_PRESSED = 4
+    EVENT_BUTTON_A_PRESSED = 4,
+    EVENT_BUTTON_X_PRESSED = 5
 };
 
+void print_libusb_version(void) {
+    const struct libusb_version *version = libusb_get_version();
+    printf("libusb v%u.%u.%u.%u%s (%s)\n",
+        version->major, version->minor, version->micro, version->nano,
+        version->rc, version->describe);
+}
+
+// Convert an array of integers to a comma-separated string
+// WARNING: Buffer overflow is possible if `str` is too small
+char *join(const uint8_t nums[], int nums_len, char str[]) {
+    char num[8];
+    str[0] = '\0';
+    for (int i = 0; i < nums_len; ++i) {
+        snprintf(num, sizeof(num), "%u,", nums[i]);
+        strcat(str, num);
+    }
+    if (nums_len > 0) {
+        str[strlen(str) - 1] = '\0'; // remove trailing comma
+    }
+    return str;
+}
+
+void print_port_path(libusb_device_handle *devh) {
+    uint8_t port_numbers[8];
+    libusb_device *dev = libusb_get_device(devh);
+    const int ports = libusb_get_port_numbers(dev, port_numbers, sizeof(port_numbers));
+    char port_path[20];
+    join(port_numbers, ports, port_path);
+    printf("Port path: %s\n", port_path);
+}
+
+// http://libusb.sourceforge.net/api-1.0/libusb_hotplug.html
 int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
     libusb_hotplug_event event, void *user_data)
 {
     struct libusb_device_descriptor desc;
     int rc;
+    int *completed = user_data;
 
     libusb_get_device_descriptor(dev, &desc);
 
@@ -24,7 +59,6 @@ int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
         if (rc != LIBUSB_SUCCESS) {
             puts("Could not open USB device");
         }
-        int *completed = user_data;
         *completed = EVENT_DEVICE_ARRIVED;
     }
     else if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT) {
@@ -32,7 +66,6 @@ int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
             libusb_close(devh);
             devh = NULL;
         }
-        int *completed = user_data;
         *completed = EVENT_DEVICE_LEFT;
     }
     else {
@@ -119,6 +152,7 @@ int init_device(libusb_device_handle *devh) {
         data, sizeof(data), &actual, 0);
 }
 
+// http://libusb.sourceforge.net/api-1.0/group__libusb__asyncio.html
 void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         printf("Transfer failed with status = %s\n", libusb_error_name(transfer->status));
@@ -137,20 +171,48 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
         struct gamepad_t gamepad;
         data_to_gamepad(transfer->buffer, &gamepad);
 
-        if (gamepad.x) {
+        if (gamepad.a) {
+            *completed = EVENT_BUTTON_A_PRESSED;
+        }
+        else if (gamepad.x) {
             *completed = EVENT_BUTTON_X_PRESSED;
         }
     }
 }
 
-int main(void)
-{
+int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
+    uint8_t data[] = {
+        0x09, // activate rumble
+        0x00,
+        0x00,
+        0x09, // length
+        0x00,
+        0x0F,
+        0x00,
+        0x00,
+        left, // low-frequency motor
+        right, // high-frequency motor
+        0x10, // on period
+        0x00, // off period
+        0x01  // repeat count
+    };
+    int actual; // how many bytes were actually transferred
+
+     // My device's out endpoint is 2
+    return libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_OUT),
+        data, sizeof(data), &actual, 0);
+}
+
+
+int main(void) {
     libusb_hotplug_callback_handle callback_handle = 0;
     uint8_t data[64]; // data buffer
     int completed = 0;
-    int rc;
+    int rc; // return code
 
-    libusb_init(NULL);
+    print_libusb_version();
+
+    rc = libusb_init(NULL);
     //libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_WARNING);
 
     if (!libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG)) {
@@ -173,15 +235,14 @@ int main(void)
     struct libusb_transfer *transfer = libusb_alloc_transfer(0);
     devh = libusb_open_device_with_vid_pid(NULL, 0x045e, 0x02ea);
     if (devh != NULL) {
+        puts("Device found");
+        print_port_path(devh);
         rc = libusb_set_auto_detach_kernel_driver(devh, 1);
         rc = libusb_claim_interface(devh, 0);
         rc = init_device(devh);
         libusb_fill_interrupt_transfer(transfer, devh, (2 | LIBUSB_ENDPOINT_IN),
             data, sizeof(data), transfer_callback, &completed, 0);
         rc = libusb_submit_transfer(transfer);
-        if (rc != LIBUSB_SUCCESS) {
-            printf("libusb_submit_transfer() failed with rc = %s\n", libusb_error_name(rc));
-        }
     }
 
     // Read forever until button X is pressed
@@ -191,24 +252,23 @@ int main(void)
 
         if (completed == EVENT_DEVICE_ARRIVED) {
             puts("Device arrived");
+            print_port_path(devh);
             rc = libusb_set_auto_detach_kernel_driver(devh, 1);
             rc = libusb_claim_interface(devh, 0);
             rc = init_device(devh);
             libusb_fill_interrupt_transfer(transfer, devh, (2 | LIBUSB_ENDPOINT_IN),
                 data, sizeof(data), transfer_callback, &completed, 0);
             rc = libusb_submit_transfer(transfer);
-            if (rc != LIBUSB_SUCCESS) {
-                printf("libusb_submit_transfer() failed with rc = %s\n", libusb_error_name(rc));
-            }
         }
         else if (completed == EVENT_DEVICE_LEFT) {
             puts("Device left");
         }
         else if (completed == EVENT_TRANSFER_COMPLETED) {
             rc = libusb_submit_transfer(transfer);
-            if (rc != LIBUSB_SUCCESS) {
-                printf("libusb_submit_transfer() failed with rc = %s\n", libusb_error_name(rc));
-            }
+        }
+        else if (completed == EVENT_BUTTON_A_PRESSED) {
+            rumble(devh, 0x20, 0x20);
+            rc = libusb_submit_transfer(transfer);
         }
         else if (completed == EVENT_BUTTON_X_PRESSED) {
             break;
@@ -219,5 +279,5 @@ int main(void)
     libusb_free_transfer(transfer);
     libusb_hotplug_deregister_callback(NULL, callback_handle);
     libusb_exit(NULL); // deinitialize libusb
-    return 0;
+    return EXIT_SUCCESS;
 }
