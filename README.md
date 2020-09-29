@@ -70,7 +70,6 @@ Device opened
 Port path: 1
 libusb_set_auto_detach_kernel_driver() returned 0
 Claimed interface
-In do_sync_interrupt_transfer()
 Read successful! 18 bytes: 2000270E5000000000002FFDF8FE2DFE8FF3
   type: 0x20
   const_0: 0x00
