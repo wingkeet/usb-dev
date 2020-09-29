@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <libusb-1.0/libusb.h>
 
@@ -182,7 +183,7 @@ int main(void) {
     rc = libusb_init(NULL); // initialize libusb
     if (rc != LIBUSB_SUCCESS) {
         printf("Init error %d\n", rc);
-        return 1;
+        return EXIT_FAILURE;
     }
     libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_WARNING);
 
@@ -191,7 +192,7 @@ int main(void) {
     if (devh == NULL) {
         puts("Cannot open device");
         libusb_exit(NULL);
-        return 2;
+        return EXIT_FAILURE;
     }
     puts("Device opened");
 
@@ -207,7 +208,7 @@ int main(void) {
         puts("Cannot claim interface");
         libusb_close(devh);
         libusb_exit(NULL);
-        return 3;
+        return EXIT_FAILURE;
     }
     puts("Claimed interface");
 
@@ -219,5 +220,5 @@ int main(void) {
     puts(rc == LIBUSB_SUCCESS ? "Released interface" : "Cannot release interface");
     libusb_close(devh); // close the device we opened
     libusb_exit(NULL); // deinitialize libusb
-    return 0;
+    return EXIT_SUCCESS;
 }
