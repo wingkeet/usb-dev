@@ -277,6 +277,7 @@ int main(void) {
         }
     }
 
+    libusb_release_interface(devh, 0); // release the claimed interface
     libusb_close(devh); // close the device we opened
     libusb_free_transfer(transfer);
     libusb_hotplug_deregister_callback(NULL, callback_handle);
