@@ -47,37 +47,6 @@ void print_port_path(libusb_device_handle *devh) {
     printf("Port path: %s\n", port_path);
 }
 
-// http://libusb.sourceforge.net/api-1.0/libusb_hotplug.html
-int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
-    libusb_hotplug_event event, void *user_data)
-{
-    struct libusb_device_descriptor desc;
-    int rc;
-    int *completed = user_data;
-
-    libusb_get_device_descriptor(dev, &desc);
-
-    if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
-        rc = libusb_open(dev, &devh);
-        if (rc != LIBUSB_SUCCESS) {
-            puts("Could not open USB device");
-        }
-        *completed = EVENT_DEVICE_ARRIVED;
-    }
-    else if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT) {
-        if (devh != NULL) {
-            libusb_close(devh);
-            devh = NULL;
-        }
-        *completed = EVENT_DEVICE_LEFT;
-    }
-    else {
-        printf("Unhandled event %d\n", event);
-    }
-
-    return 0; // rearm this callback
-}
-
 void printhex(const uint8_t data[], int length) {
     for (int i = 0; i < length; ++i) {
         printf("%02X", data[i]);
@@ -155,6 +124,60 @@ int init_device(libusb_device_handle *devh) {
         data, sizeof(data), &actual, 0);
 }
 
+int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
+    uint8_t data[] = {
+        0x09, // activate rumble
+        0x00,
+        0x00,
+        0x09, // length
+        0x00,
+        0x0F,
+        0x00,
+        0x00,
+        left, // low-frequency motor
+        right, // high-frequency motor
+        0x10, // on period
+        0x00, // off period
+        0x01  // repeat count
+    };
+    int actual; // how many bytes were actually transferred
+
+     // My device's out endpoint is 2
+    return libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_OUT),
+        data, sizeof(data), &actual, 0);
+}
+
+// http://libusb.sourceforge.net/api-1.0/libusb_hotplug.html
+int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
+    libusb_hotplug_event event, void *user_data)
+{
+    struct libusb_device_descriptor desc;
+    int rc;
+    int *completed = user_data;
+
+    libusb_get_device_descriptor(dev, &desc);
+
+    if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
+        rc = libusb_open(dev, &devh);
+        if (rc != LIBUSB_SUCCESS) {
+            puts("Could not open USB device");
+        }
+        *completed = EVENT_DEVICE_ARRIVED;
+    }
+    else if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT) {
+        if (devh != NULL) {
+            libusb_close(devh);
+            devh = NULL;
+        }
+        *completed = EVENT_DEVICE_LEFT;
+    }
+    else {
+        printf("Unhandled event %d\n", event);
+    }
+
+    return 0; // rearm this callback
+}
+
 // http://libusb.sourceforge.net/api-1.0/group__libusb__asyncio.html
 void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
@@ -182,30 +205,6 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
         }
     }
 }
-
-int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
-    uint8_t data[] = {
-        0x09, // activate rumble
-        0x00,
-        0x00,
-        0x09, // length
-        0x00,
-        0x0F,
-        0x00,
-        0x00,
-        left, // low-frequency motor
-        right, // high-frequency motor
-        0x10, // on period
-        0x00, // off period
-        0x01  // repeat count
-    };
-    int actual; // how many bytes were actually transferred
-
-     // My device's out endpoint is 2
-    return libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_OUT),
-        data, sizeof(data), &actual, 0);
-}
-
 
 int main(void) {
     libusb_hotplug_callback_handle callback_handle = 0;
