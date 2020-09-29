@@ -13,6 +13,9 @@ enum {
     EVENT_BUTTON_X_PRESSED = 5
 };
 
+static const uint16_t VENDOR_ID = 0x045e;
+static const uint16_t PRODUCT_ID = 0x02ea;
+
 void print_libusb_version(void) {
     const struct libusb_version *version = libusb_get_version();
     printf("libusb v%u.%u.%u.%u%s (%s)\n",
@@ -222,7 +225,7 @@ int main(void) {
     }
 
     rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
-        LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, 0, 0x045e, 0x02ea,
+        LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, 0, VENDOR_ID, PRODUCT_ID,
         LIBUSB_HOTPLUG_MATCH_ANY, hotplug_callback, &completed,
         &callback_handle);
     if (rc != LIBUSB_SUCCESS) {
@@ -233,9 +236,9 @@ int main(void) {
 
     // Open device and submit an asynchronous transfer
     struct libusb_transfer *transfer = libusb_alloc_transfer(0);
-    devh = libusb_open_device_with_vid_pid(NULL, 0x045e, 0x02ea);
+    devh = libusb_open_device_with_vid_pid(NULL, VENDOR_ID, PRODUCT_ID);
     if (devh != NULL) {
-        puts("Device found");
+        puts("Device opened");
         print_port_path(devh);
         rc = libusb_set_auto_detach_kernel_driver(devh, 1);
         rc = libusb_claim_interface(devh, 0);
