@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
 #include <libusb-1.0/libusb.h>
 
@@ -117,60 +116,6 @@ void print_gamepad(const struct gamepad_t *gamepad) {
     printf("  rstick x,y: %d,%d\n", gamepad->rstick_x, gamepad->rstick_y);
 }
 
-void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
-    if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
-        printf("Transfer failed with status = %d\n", transfer->status);
-        return;
-    }
-
-    printf("Read successful! %d bytes: ", transfer->actual_length);
-    printhex(transfer->buffer, transfer->actual_length);
-    putchar('\n');
-
-    if (transfer->actual_length == 18 && transfer->buffer[0] == 0x20) {
-        // We received button data
-        struct gamepad_t gamepad;
-        data_to_gamepad(transfer->buffer, &gamepad);
-        print_gamepad(&gamepad);
-
-        if (gamepad.x) {
-            int *completed = transfer->user_data;
-            *completed = 1;
-        }
-    }
-}
-
-void do_async_interrupt_transfer(libusb_device_handle *devh) {
-    uint8_t data[18]; // data buffer
-    int rc;
-    int completed = 0;
-
-    printf("In %s()\n", __func__);
-
-    struct libusb_transfer *transfer = libusb_alloc_transfer(0);
-    if (transfer == NULL) {
-        puts("libusb_alloc_transfer() failed");
-        return;
-    }
-    libusb_fill_interrupt_transfer(transfer, devh, (2 | LIBUSB_ENDPOINT_IN),
-        data, sizeof(data), transfer_callback, &completed, 0);
-
-    while (!completed) {
-        rc = libusb_submit_transfer(transfer);
-        if (rc != LIBUSB_SUCCESS) {
-            printf("libusb_submit_transfer() failed with r = %d\n", rc);
-            break;
-        }
-        rc = libusb_handle_events_completed(NULL, &completed);
-        if (rc != LIBUSB_SUCCESS) {
-            printf("libusb_handle_events_completed() failed with r = %d\n", rc);
-            break;
-        }
-    }
-
-    libusb_free_transfer(transfer);
-}
-
 int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
     uint8_t data[] = {
         0x09, // activate rumble
@@ -195,13 +140,11 @@ int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
 }
 
 void do_sync_interrupt_transfer(libusb_device_handle *devh) {
-    uint8_t data[18]; // data buffer
+    uint8_t data[64]; // data buffer
     int actual; // how many bytes were actually transferred
     int rc;
 
-    printf("In %s()\n", __func__);
-
-    while (true) {
+    while (1) {
          // My device's in endpoint is 2
         rc = libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_IN),
             data, sizeof(data), &actual, 0);
