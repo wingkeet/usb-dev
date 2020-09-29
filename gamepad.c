@@ -117,6 +117,16 @@ void print_gamepad(const struct gamepad_t *gamepad) {
     printf("  rstick x,y: %d,%d\n", gamepad->rstick_x, gamepad->rstick_y);
 }
 
+// Initialize controller (with input)
+int init_device(libusb_device_handle *devh) {
+    uint8_t data[] = { 0x05, 0x20, 0x00, 0x01, 0x00 };
+    int actual; // how many bytes were actually transferred
+
+    // My device's out endpoint is 2
+    return libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_OUT),
+        data, sizeof(data), &actual, 0);
+}
+
 int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
     uint8_t data[] = {
         0x09, // activate rumble
@@ -211,6 +221,8 @@ int main(void) {
         return EXIT_FAILURE;
     }
     puts("Claimed interface");
+
+    rc = init_device(devh);
 
     // Read forever until button X is pressed
     do_sync_interrupt_transfer(devh);
