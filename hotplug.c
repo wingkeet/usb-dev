@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <libusb-1.0/libusb.h>
 
 static libusb_device_handle *devh = NULL;
@@ -250,7 +251,8 @@ int main(void) {
     // Read forever until button X is pressed
     while (1) {
         completed = 0;
-        libusb_handle_events_completed(NULL, &completed);
+        rc = libusb_handle_events_completed(NULL, &completed);
+        //nanosleep(&(struct timespec){0, 100000000UL}, NULL); // 100 ms
 
         if (completed == EVENT_DEVICE_ARRIVED) {
             puts("Device arrived");
