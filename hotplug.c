@@ -149,7 +149,7 @@ int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
 }
 
 // http://libusb.sourceforge.net/api-1.0/libusb_hotplug.html
-int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
+int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
     libusb_hotplug_event event, void *user_data)
 {
     struct libusb_device_descriptor desc;
