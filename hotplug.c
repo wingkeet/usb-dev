@@ -251,6 +251,8 @@ int main(void) {
     // Read forever until button X is pressed
     while (1) {
         completed = 0;
+
+        // Block forever until an event is received
         rc = libusb_handle_events_completed(NULL, &completed);
         //nanosleep(&(struct timespec){0, 100000000UL}, NULL); // 100 ms
 

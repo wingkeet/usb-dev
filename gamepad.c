@@ -156,7 +156,7 @@ void do_sync_interrupt_transfer(libusb_device_handle *devh) {
     int rc;
 
     while (1) {
-         // My device's in endpoint is 2
+        // Block forever until an event is received
         rc = libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_IN),
             data, sizeof(data), &actual, 0);
         if (rc == LIBUSB_SUCCESS) {
