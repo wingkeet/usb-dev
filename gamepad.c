@@ -145,7 +145,7 @@ int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
     };
     int actual; // how many bytes were actually transferred
 
-     // My device's out endpoint is 2
+    // My device's out endpoint is 2
     return libusb_interrupt_transfer(devh, (2 | LIBUSB_ENDPOINT_OUT),
         data, sizeof(data), &actual, 0);
 }
