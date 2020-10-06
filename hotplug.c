@@ -17,7 +17,8 @@ enum {
 static const uint16_t VENDOR_ID = 0x045e;
 static const uint16_t PRODUCT_ID = 0x02ea;
 
-void print_libusb_version(void) {
+void print_libusb_version(void)
+{
     const struct libusb_version *version = libusb_get_version();
     printf("libusb v%u.%u.%u.%u%s (%s)\n",
         version->major, version->minor, version->micro, version->nano,
@@ -26,7 +27,8 @@ void print_libusb_version(void) {
 
 // Convert an array of integers to a comma-separated string
 // WARNING: Buffer overflow is possible if `str` is too small
-char *join(const uint8_t nums[], int nums_len, char str[]) {
+char *join(const uint8_t nums[], int nums_len, char str[])
+{
     char num[8];
     str[0] = '\0';
     for (int i = 0; i < nums_len; ++i) {
@@ -39,7 +41,8 @@ char *join(const uint8_t nums[], int nums_len, char str[]) {
     return str;
 }
 
-void print_port_path(libusb_device_handle *devh) {
+void print_port_path(libusb_device_handle *devh)
+{
     uint8_t port_numbers[8];
     libusb_device *dev = libusb_get_device(devh);
     const int ports = libusb_get_port_numbers(dev, port_numbers, sizeof(port_numbers));
@@ -48,7 +51,8 @@ void print_port_path(libusb_device_handle *devh) {
     printf("Port path: %s\n", port_path);
 }
 
-void printhex(const uint8_t data[], int length) {
+void printhex(const uint8_t data[], int length)
+{
     for (int i = 0; i < length; ++i) {
         printf("%02X", data[i]);
     }
@@ -87,7 +91,8 @@ struct gamepad_t {
 };
 
 // The `data` array must be at least 18 bytes in length
-void data_to_gamepad(const uint8_t data[], struct gamepad_t *gamepad) {
+void data_to_gamepad(const uint8_t data[], struct gamepad_t *gamepad)
+{
     gamepad->type = data[0];
     gamepad->const_0 = data[1];
     gamepad->id = data[2];
@@ -116,7 +121,8 @@ void data_to_gamepad(const uint8_t data[], struct gamepad_t *gamepad) {
 }
 
 // Initialize controller (with input)
-int init_device(libusb_device_handle *devh) {
+int init_device(libusb_device_handle *devh)
+{
     uint8_t data[] = { 0x05, 0x20, 0x00, 0x01, 0x00 };
     int actual; // how many bytes were actually transferred
 
@@ -125,7 +131,8 @@ int init_device(libusb_device_handle *devh) {
         data, sizeof(data), &actual, 0);
 }
 
-int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
+int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right)
+{
     uint8_t data[] = {
         0x09, // activate rumble
         0x00,
@@ -180,7 +187,8 @@ int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx, struct libusb_devic
 }
 
 // http://libusb.sourceforge.net/api-1.0/group__libusb__asyncio.html
-void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
+void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
+{
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         printf("Transfer failed with status = %s\n", libusb_error_name(transfer->status));
         return;
@@ -207,7 +215,8 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer) {
     }
 }
 
-int main(void) {
+int main(void)
+{
     libusb_hotplug_callback_handle callback_handle = 0;
     uint8_t data[64]; // data buffer
     int completed = 0;

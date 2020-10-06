@@ -3,7 +3,8 @@
 #include <string.h>
 #include <libusb-1.0/libusb.h>
 
-void print_libusb_version(void) {
+void print_libusb_version(void)
+{
     const struct libusb_version *version = libusb_get_version();
     printf("libusb v%u.%u.%u.%u%s (%s)\n",
         version->major, version->minor, version->micro, version->nano,
@@ -12,7 +13,8 @@ void print_libusb_version(void) {
 
 // Convert an array of integers to a comma-separated string
 // WARNING: Buffer overflow is possible if `str` is too small
-char *join(const uint8_t nums[], int nums_len, char str[]) {
+char *join(const uint8_t nums[], int nums_len, char str[])
+{
     char num[8];
     str[0] = '\0';
     for (int i = 0; i < nums_len; ++i) {
@@ -25,7 +27,8 @@ char *join(const uint8_t nums[], int nums_len, char str[]) {
     return str;
 }
 
-void print_port_path(libusb_device_handle *devh) {
+void print_port_path(libusb_device_handle *devh)
+{
     uint8_t port_numbers[8];
     libusb_device *dev = libusb_get_device(devh);
     const int ports = libusb_get_port_numbers(dev, port_numbers, sizeof(port_numbers));
@@ -34,7 +37,8 @@ void print_port_path(libusb_device_handle *devh) {
     printf("Port path: %s\n", port_path);
 }
 
-void printhex(const uint8_t data[], int length) {
+void printhex(const uint8_t data[], int length)
+{
     for (int i = 0; i < length; ++i) {
         printf("%02X", data[i]);
     }
@@ -73,7 +77,8 @@ struct gamepad_t {
 };
 
 // The `data` array must be at least 18 bytes in length
-void data_to_gamepad(const uint8_t data[], struct gamepad_t *gamepad) {
+void data_to_gamepad(const uint8_t data[], struct gamepad_t *gamepad)
+{
     gamepad->type = data[0];
     gamepad->const_0 = data[1];
     gamepad->id = data[2];
@@ -101,7 +106,8 @@ void data_to_gamepad(const uint8_t data[], struct gamepad_t *gamepad) {
     gamepad->rstick_y = * (int16_t *) &data[16];
 }
 
-void print_gamepad(const struct gamepad_t *gamepad) {
+void print_gamepad(const struct gamepad_t *gamepad)
+{
     printf("  type: 0x%02X\n", gamepad->type);
     printf("  const_0: 0x%02X\n", gamepad->const_0);
     printf("  id: 0x%02X\n", gamepad->id);
@@ -118,7 +124,8 @@ void print_gamepad(const struct gamepad_t *gamepad) {
 }
 
 // Initialize controller (with input)
-int init_device(libusb_device_handle *devh) {
+int init_device(libusb_device_handle *devh)
+{
     uint8_t data[] = { 0x05, 0x20, 0x00, 0x01, 0x00 };
     int actual; // how many bytes were actually transferred
 
@@ -127,7 +134,8 @@ int init_device(libusb_device_handle *devh) {
         data, sizeof(data), &actual, 0);
 }
 
-int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
+int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right)
+{
     uint8_t data[] = {
         0x09, // activate rumble
         0x00,
@@ -150,7 +158,8 @@ int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right) {
         data, sizeof(data), &actual, 0);
 }
 
-void do_sync_interrupt_transfer(libusb_device_handle *devh) {
+void do_sync_interrupt_transfer(libusb_device_handle *devh)
+{
     uint8_t data[64]; // data buffer
     int actual; // how many bytes were actually transferred
     int rc;
@@ -184,7 +193,8 @@ void do_sync_interrupt_transfer(libusb_device_handle *devh) {
     }
 }
 
-int main(void) {
+int main(void)
+{
     libusb_device_handle *devh = NULL; // device handle
     int rc; // return code
 
