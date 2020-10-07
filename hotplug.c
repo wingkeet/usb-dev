@@ -4,8 +4,6 @@
 #include <time.h>
 #include <libusb-1.0/libusb.h>
 
-static libusb_device_handle *devh = NULL;
-
 enum {
     EVENT_DEVICE_ARRIVED = 1,
     EVENT_DEVICE_LEFT = 2,
@@ -16,6 +14,7 @@ enum {
 
 static const uint16_t VENDOR_ID = 0x045e;
 static const uint16_t PRODUCT_ID = 0x02ea;
+static libusb_device_handle *devh = NULL;
 
 void print_libusb_version(void)
 {
