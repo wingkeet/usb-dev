@@ -214,6 +214,7 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
     }
 }
 
+// Error handling code has been omitted for clarity
 int main(void)
 {
     libusb_hotplug_callback_handle callback_handle = 0;
