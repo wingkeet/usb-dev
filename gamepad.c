@@ -13,15 +13,15 @@ void print_libusb_version(void)
 
 // Convert an array of integers to a comma-separated string
 // WARNING: Buffer overflow is possible if `str` is too small
-char *join(const uint8_t nums[], int nums_len, char str[])
+char *join(int len, const uint8_t nums[len], char str[])
 {
     char num[8];
     str[0] = '\0';
-    for (int i = 0; i < nums_len; ++i) {
+    for (int i = 0; i < len; ++i) {
         snprintf(num, sizeof(num), "%u,", nums[i]);
         strcat(str, num);
     }
-    if (nums_len > 0) {
+    if (len > 0) {
         str[strlen(str) - 1] = '\0'; // remove trailing comma
     }
     return str;
@@ -33,13 +33,13 @@ void print_port_path(libusb_device_handle *devh)
     libusb_device *dev = libusb_get_device(devh);
     const int ports = libusb_get_port_numbers(dev, port_numbers, sizeof(port_numbers));
     char port_path[20];
-    join(port_numbers, ports, port_path);
+    join(ports, port_numbers, port_path);
     printf("Port path: %s\n", port_path);
 }
 
-void printhex(const uint8_t data[], int length)
+void printhex(int len, const uint8_t data[len])
 {
-    for (int i = 0; i < length; ++i) {
+    for (int i = 0; i < len; ++i) {
         printf("%02X", data[i]);
     }
 }
@@ -77,7 +77,7 @@ struct gamepad_t {
 };
 
 // The `data` array must be at least 18 bytes in length
-void data_to_gamepad(const uint8_t data[], struct gamepad_t *gamepad)
+void data_to_gamepad(const uint8_t data[18], struct gamepad_t *gamepad)
 {
     gamepad->type = data[0];
     gamepad->const_0 = data[1];
@@ -170,7 +170,7 @@ void do_sync_interrupt_transfer(libusb_device_handle *devh)
             data, sizeof(data), &actual, 0);
         if (rc == LIBUSB_SUCCESS) {
             printf("Read successful! %d bytes: ", actual);
-            printhex(data, actual);
+            printhex(actual, data);
             putchar('\n');
 
             if (actual == 18 && data[0] == 0x20) {
