@@ -20,6 +20,7 @@ static const uint16_t PRODUCT_ID = 0x02ea;
 static libusb_device_handle *devh = NULL;
 static struct libusb_transfer *transfer = NULL;
 static libusb_hotplug_callback_handle hotplug_callback_handle = 0;
+static int completed = 0;
 
 static void print_libusb_version(void)
 {
@@ -165,7 +166,7 @@ static int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx,
 {
     struct libusb_device_descriptor desc;
     int rc;
-    int *completed = user_data;
+    int * const completed = user_data;
 
     libusb_get_device_descriptor(dev, &desc);
 
@@ -193,37 +194,36 @@ static int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx,
 // http://libusb.sourceforge.net/api-1.0/group__libusb__asyncio.html
 static void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
 {
-    int *completed = transfer->user_data;
+    int * const completed = transfer->user_data;
 
-    if (transfer->status == LIBUSB_TRANSFER_CANCELLED) {
-        *completed = EVENT_QUIT; // user pressed CTRL-C
-        return;
+    if (transfer->status == LIBUSB_TRANSFER_COMPLETED) {
+        printf("Read successful! %d bytes: ", transfer->actual_length);
+        printhex(transfer->actual_length, transfer->buffer);
+        putchar('\n');
+
+        *completed = EVENT_TRANSFER_COMPLETED;
+
+        if (transfer->actual_length == 18 && transfer->buffer[0] == 0x20) {
+            // We received button data
+            struct gamepad_t gamepad;
+            data_to_gamepad(transfer->buffer, &gamepad);
+
+            if (gamepad.a) {
+                *completed = EVENT_BUTTON_A_PRESSED;
+            }
+            else if (gamepad.x) {
+                *completed = EVENT_BUTTON_X_PRESSED;
+            }
+        }
     }
-    else if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
+    else if (transfer->status == LIBUSB_TRANSFER_CANCELLED) {
+        // User pressed CTRL+C
+        *completed = EVENT_QUIT;
+    }
+    else {
         printf("Transfer failed with status = %s\n", libusb_error_name(transfer->status));
-        return;
-    }
-
-    printf("Read successful! %d bytes: ", transfer->actual_length);
-    printhex(transfer->actual_length, transfer->buffer);
-    putchar('\n');
-
-    *completed = EVENT_TRANSFER_COMPLETED;
-
-    if (transfer->actual_length == 18 && transfer->buffer[0] == 0x20) {
-        // We received button data
-        struct gamepad_t gamepad;
-        data_to_gamepad(transfer->buffer, &gamepad);
-
-        if (gamepad.a) {
-            *completed = EVENT_BUTTON_A_PRESSED;
-        }
-        else if (gamepad.x) {
-            *completed = EVENT_BUTTON_X_PRESSED;
-        }
     }
 }
-
 
 static void signal_handler(int signum)
 {
@@ -232,11 +232,8 @@ static void signal_handler(int signum)
             libusb_cancel_transfer(transfer);
         }
         else {
-            libusb_free_transfer(transfer);
-            libusb_hotplug_deregister_callback(NULL, hotplug_callback_handle);
-            libusb_exit(NULL); // deinitialize libusb
-            write(STDOUT_FILENO, "\n", 1);
-            exit(EXIT_SUCCESS);
+            completed = EVENT_QUIT;
+            libusb_interrupt_event_handler(NULL);
         }
     }
 }
@@ -254,7 +251,6 @@ int main(void)
     }
 
     uint8_t data[64]; // data buffer
-    int completed = 0;
     int rc; // return code
 
     print_libusb_version();
@@ -332,8 +328,10 @@ int main(void)
     }
 
     // Shutting down from here onwards
-    libusb_release_interface(devh, 0); // release the claimed interface
-    libusb_close(devh); // close the device we opened
+    if (devh != NULL) {
+        libusb_release_interface(devh, 0); // release the claimed interface
+        libusb_close(devh); // close the device we opened
+    }
     libusb_free_transfer(transfer);
     libusb_hotplug_deregister_callback(NULL, hotplug_callback_handle);
     libusb_exit(NULL); // deinitialize libusb
