@@ -53,17 +53,16 @@ libusb: error [_get_usbfs_fd] libusb requires write access to USB device nodes.
 Cannot open device
 ```
 
-### Compile and run
+### Build programs
 ```
-$ gcc gamepad.c -o gamepad -lusb-1.0 -Wall
-$ ./gamepad
+$ make
 ```
 
 ### Usage
-Play with the buttons on your controller. You should see some text output.
-To activate rumble, press the A button. To exit the program, press the
-X button. Below is a sample run of the program when both the A button
-and the X button are pressed at the same time:
+Type `./gamepad` and play with the buttons on your controller. You should
+see some text output. To activate rumble, press the A button. To exit
+the program, press the X button. Below is a sample run of the program
+when both the A button and the X button are pressed at the same time:
 ```
 libusb v1.0.23.11397 (http://libusb.info)
 Device opened
