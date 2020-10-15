@@ -1,22 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+#include <unistd.h>
 #include <time.h>
 #include <libusb-1.0/libusb.h>
 
 enum {
-    EVENT_DEVICE_ARRIVED = 1,
-    EVENT_DEVICE_LEFT = 2,
-    EVENT_TRANSFER_COMPLETED = 3,
-    EVENT_BUTTON_A_PRESSED = 4,
-    EVENT_BUTTON_X_PRESSED = 5
+    EVENT_QUIT = 1,
+    EVENT_DEVICE_ARRIVED = 2,
+    EVENT_DEVICE_LEFT = 3,
+    EVENT_TRANSFER_COMPLETED = 4,
+    EVENT_BUTTON_A_PRESSED = 5,
+    EVENT_BUTTON_X_PRESSED = 6
 };
 
 static const uint16_t VENDOR_ID = 0x045e;
 static const uint16_t PRODUCT_ID = 0x02ea;
 static libusb_device_handle *devh = NULL;
+static struct libusb_transfer *transfer = NULL;
+static libusb_hotplug_callback_handle hotplug_callback_handle = 0;
 
-void print_libusb_version(void)
+static void print_libusb_version(void)
 {
     const struct libusb_version *version = libusb_get_version();
     printf("libusb v%u.%u.%u.%u%s (%s)\n",
@@ -26,7 +31,7 @@ void print_libusb_version(void)
 
 // Convert an array of integers to a comma-separated string
 // WARNING: Buffer overflow is possible if `str` is too small
-char *join(int len, const uint8_t nums[len], char str[])
+static char *join(int len, const uint8_t nums[len], char str[])
 {
     char num[8];
     str[0] = '\0';
@@ -40,7 +45,7 @@ char *join(int len, const uint8_t nums[len], char str[])
     return str;
 }
 
-void print_port_path(libusb_device_handle *devh)
+static void print_port_path(libusb_device_handle *devh)
 {
     uint8_t port_numbers[8];
     libusb_device *dev = libusb_get_device(devh);
@@ -50,7 +55,7 @@ void print_port_path(libusb_device_handle *devh)
     printf("Port path: %s\n", port_path);
 }
 
-void printhex(int len, const uint8_t data[len])
+static void printhex(int len, const uint8_t data[len])
 {
     for (int i = 0; i < len; ++i) {
         printf("%02X", data[i]);
@@ -90,7 +95,7 @@ struct gamepad_t {
 };
 
 // The `data` array must be at least 18 bytes in length
-void data_to_gamepad(const uint8_t data[18], struct gamepad_t *gamepad)
+static void data_to_gamepad(const uint8_t data[18], struct gamepad_t *gamepad)
 {
     gamepad->type = data[0];
     gamepad->const_0 = data[1];
@@ -120,7 +125,7 @@ void data_to_gamepad(const uint8_t data[18], struct gamepad_t *gamepad)
 }
 
 // Initialize controller (with input)
-int init_device(libusb_device_handle *devh)
+static int init_device(libusb_device_handle *devh)
 {
     uint8_t data[] = { 0x05, 0x20, 0x00, 0x01, 0x00 };
     int actual; // how many bytes were actually transferred
@@ -130,7 +135,7 @@ int init_device(libusb_device_handle *devh)
         data, sizeof(data), &actual, 0);
 }
 
-int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right)
+static int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right)
 {
     uint8_t data[] = {
         0x09, // activate rumble
@@ -155,8 +160,8 @@ int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right)
 }
 
 // http://libusb.sourceforge.net/api-1.0/libusb_hotplug.html
-int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
-    libusb_hotplug_event event, void *user_data)
+static int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx,
+    struct libusb_device *dev, libusb_hotplug_event event, void *user_data)
 {
     struct libusb_device_descriptor desc;
     int rc;
@@ -186,9 +191,15 @@ int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx, struct libusb_devic
 }
 
 // http://libusb.sourceforge.net/api-1.0/group__libusb__asyncio.html
-void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
+static void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
 {
-    if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
+    int *completed = transfer->user_data;
+
+    if (transfer->status == LIBUSB_TRANSFER_CANCELLED) {
+        *completed = EVENT_QUIT; // user pressed CTRL-C
+        return;
+    }
+    else if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         printf("Transfer failed with status = %s\n", libusb_error_name(transfer->status));
         return;
     }
@@ -197,7 +208,6 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
     printhex(transfer->actual_length, transfer->buffer);
     putchar('\n');
 
-    int *completed = transfer->user_data;
     *completed = EVENT_TRANSFER_COMPLETED;
 
     if (transfer->actual_length == 18 && transfer->buffer[0] == 0x20) {
@@ -214,10 +224,35 @@ void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
     }
 }
 
+
+static void signal_handler(int signum)
+{
+    if (signum == SIGINT) {
+        if (devh != NULL) {
+            libusb_cancel_transfer(transfer);
+        }
+        else {
+            libusb_free_transfer(transfer);
+            libusb_hotplug_deregister_callback(NULL, hotplug_callback_handle);
+            libusb_exit(NULL); // deinitialize libusb
+            write(STDOUT_FILENO, "\n", 1);
+            exit(EXIT_SUCCESS);
+        }
+    }
+}
+
 // Error handling code has been omitted for clarity
 int main(void)
 {
-    libusb_hotplug_callback_handle callback_handle = 0;
+    // Handle CTRL+C
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = signal_handler;
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        perror("sigaction");
+        return EXIT_FAILURE;
+    }
+
     uint8_t data[64]; // data buffer
     int completed = 0;
     int rc; // return code
@@ -225,7 +260,7 @@ int main(void)
     print_libusb_version();
 
     rc = libusb_init(NULL);
-    //libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_WARNING);
+    libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_WARNING);
 
     if (!libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG)) {
         puts("Hotplug is not supported");
@@ -236,15 +271,17 @@ int main(void)
     rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
         LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, 0, VENDOR_ID, PRODUCT_ID,
         LIBUSB_HOTPLUG_MATCH_ANY, hotplug_callback, &completed,
-        &callback_handle);
+        &hotplug_callback_handle);
     if (rc != LIBUSB_SUCCESS) {
         puts("Error registering hotplug callback");
         libusb_exit(NULL);
         return EXIT_FAILURE;
     }
 
+    // We use a single transfer structure throughout the whole program
+    transfer = libusb_alloc_transfer(0);
+
     // Open device and submit an asynchronous transfer
-    struct libusb_transfer *transfer = libusb_alloc_transfer(0);
     devh = libusb_open_device_with_vid_pid(NULL, VENDOR_ID, PRODUCT_ID);
     if (devh != NULL) {
         puts("Device opened");
@@ -265,7 +302,11 @@ int main(void)
         rc = libusb_handle_events_completed(NULL, &completed);
         //nanosleep(&(struct timespec){0, 100000000UL}, NULL); // 100 ms
 
-        if (completed == EVENT_DEVICE_ARRIVED) {
+        if (completed == EVENT_QUIT) {
+            putchar('\n');
+            break;
+        }
+        else if (completed == EVENT_DEVICE_ARRIVED) {
             puts("Device arrived");
             print_port_path(devh);
             rc = libusb_set_auto_detach_kernel_driver(devh, 1);
@@ -294,7 +335,7 @@ int main(void)
     libusb_release_interface(devh, 0); // release the claimed interface
     libusb_close(devh); // close the device we opened
     libusb_free_transfer(transfer);
-    libusb_hotplug_deregister_callback(NULL, callback_handle);
+    libusb_hotplug_deregister_callback(NULL, hotplug_callback_handle);
     libusb_exit(NULL); // deinitialize libusb
     return EXIT_SUCCESS;
 }
