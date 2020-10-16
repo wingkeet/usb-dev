@@ -238,20 +238,24 @@ static void signal_handler(int signum)
     }
 }
 
-// Error handling code has been omitted for clarity
-int main(void)
+static int register_signal_handler(void)
 {
-    // Handle CTRL+C
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = signal_handler;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
+    return sigaction(SIGINT, &sa, NULL);
+}
+
+// Error handling code has been omitted for clarity
+int main(void)
+{
+    uint8_t data[64]; // data buffer
+    int rc; // return code
+
+    if (register_signal_handler() == -1) {
         perror("sigaction");
         return EXIT_FAILURE;
     }
-
-    uint8_t data[64]; // data buffer
-    int rc; // return code
 
     print_libusb_version();
 
