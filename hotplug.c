@@ -339,5 +339,6 @@ int main(void)
     libusb_free_transfer(transfer);
     libusb_hotplug_deregister_callback(NULL, hotplug_callback_handle);
     libusb_exit(NULL); // deinitialize libusb
+    puts("bye");
     return EXIT_SUCCESS;
 }
