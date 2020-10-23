@@ -36,7 +36,7 @@ static char *join(int len, const uint8_t nums[len], char str[])
 {
     char num[8];
     str[0] = '\0';
-    for (int i = 0; i < len; ++i) {
+    for (int i = 0; i < len; i++) {
         snprintf(num, sizeof(num), "%u,", nums[i]);
         strcat(str, num);
     }
@@ -58,7 +58,7 @@ static void print_port_path(libusb_device_handle *devh)
 
 static void printhex(int len, const uint8_t data[len])
 {
-    for (int i = 0; i < len; ++i) {
+    for (int i = 0; i < len; i++) {
         printf("%02X", data[i]);
     }
 }
