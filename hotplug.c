@@ -7,12 +7,12 @@
 #include <libusb-1.0/libusb.h>
 
 enum {
-    EVENT_QUIT = 1,
-    EVENT_DEVICE_ARRIVED = 2,
-    EVENT_DEVICE_LEFT = 3,
+    EVENT_QUIT               = 1,
+    EVENT_DEVICE_ARRIVED     = 2,
+    EVENT_DEVICE_LEFT        = 3,
     EVENT_TRANSFER_COMPLETED = 4,
-    EVENT_BUTTON_A_PRESSED = 5,
-    EVENT_BUTTON_X_PRESSED = 6
+    EVENT_BUTTON_A_PRESSED   = 5,
+    EVENT_BUTTON_X_PRESSED   = 6
 };
 
 static const uint16_t VENDOR_ID = 0x045e;
@@ -173,7 +173,7 @@ static int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx,
     if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
         rc = libusb_open(dev, &devh);
         if (rc != LIBUSB_SUCCESS) {
-            puts("Could not open USB device");
+            fputs("Could not open USB device\n", stderr);
         }
         *completed = EVENT_DEVICE_ARRIVED;
     }
@@ -185,7 +185,7 @@ static int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx,
         *completed = EVENT_DEVICE_LEFT;
     }
     else {
-        printf("Unhandled event %d\n", event);
+        fprintf(stderr, "Unhandled event %d\n", event);
     }
 
     return 0; // rearm this callback
@@ -221,7 +221,8 @@ static void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
         *completed = EVENT_QUIT;
     }
     else {
-        printf("Transfer failed with status = %s\n", libusb_error_name(transfer->status));
+        fprintf(stderr, "Transfer failed with status = %s\n",
+            libusb_error_name(transfer->status));
     }
 }
 
@@ -263,7 +264,7 @@ int main(void)
     libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_WARNING);
 
     if (!libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG)) {
-        puts("Hotplug is not supported");
+        fputs("Hotplug is not supported\n", stderr);
         libusb_exit(NULL);
         return EXIT_FAILURE;
     }
@@ -273,7 +274,7 @@ int main(void)
         LIBUSB_HOTPLUG_MATCH_ANY, hotplug_callback, &completed,
         &hotplug_callback_handle);
     if (rc != LIBUSB_SUCCESS) {
-        puts("Error registering hotplug callback");
+        fputs("Error registering hotplug callback\n", stderr);
         libusb_exit(NULL);
         return EXIT_FAILURE;
     }

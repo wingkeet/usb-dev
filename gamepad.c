@@ -188,7 +188,7 @@ static void do_sync_interrupt_transfer(libusb_device_handle *devh)
             }
         }
         else {
-            puts("Read error");
+            fputs("Read error\n", stderr);
         }
     }
 }
@@ -202,7 +202,7 @@ int main(void)
 
     rc = libusb_init(NULL); // initialize libusb
     if (rc != LIBUSB_SUCCESS) {
-        printf("Init error %d\n", rc);
+        fprintf(stderr, "Init error %d\n", rc);
         return EXIT_FAILURE;
     }
     libusb_set_option(NULL, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_WARNING);
@@ -210,7 +210,7 @@ int main(void)
     // These are the vendor_id and product_id I found for my usb device
     devh = libusb_open_device_with_vid_pid(NULL, 0x045e, 0x02ea);
     if (devh == NULL) {
-        puts("Cannot open device");
+        fputs("Cannot open device\n", stderr);
         libusb_exit(NULL);
         return EXIT_FAILURE;
     }
@@ -225,7 +225,7 @@ int main(void)
     // Claim interface 0 (the first) of device (mine had just 1)
     rc = libusb_claim_interface(devh, 0);
     if (rc != LIBUSB_SUCCESS) {
-        puts("Cannot claim interface");
+        fputs("Cannot claim interface\n", stderr);
         libusb_close(devh);
         libusb_exit(NULL);
         return EXIT_FAILURE;
@@ -239,7 +239,8 @@ int main(void)
 
     // Shutting down from here onwards
     rc = libusb_release_interface(devh, 0); // release the claimed interface
-    puts(rc == LIBUSB_SUCCESS ? "Released interface" : "Cannot release interface");
+    rc == LIBUSB_SUCCESS ? puts("Released interface") :
+        fputs("Cannot release interface\n", stderr);
     libusb_close(devh); // close the device we opened
     libusb_exit(NULL); // deinitialize libusb
     return EXIT_SUCCESS;
