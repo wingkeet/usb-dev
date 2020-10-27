@@ -85,8 +85,8 @@ Read successful! 18 bytes: 2000270E5000000000002FFDF8FE2DFE8FF3
 Released interface
 ```
 
-### License
-There is no license. You may use these sample programs however you wish.
+### Copyright
+The software contained herein is released into the public domain. See https://unlicense.org/.
 
 ### References
 - https://libusb.info/
