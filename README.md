@@ -86,9 +86,9 @@ Released interface
 ```
 
 ### License
-The software contained herein is released into the public domain. In other words,
-there are no restrictions and you may do whatever you want with it.
-See https://unlicense.org/.
+The software contained herein is released into the public domain under the
+[Unlicense](https://unlicense.org/). In layman's terms, there are no
+restrictions and you are free to do whatever you want with it.
 
 ### References
 - https://libusb.info/
