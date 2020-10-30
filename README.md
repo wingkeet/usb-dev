@@ -6,7 +6,7 @@ to set up Ubuntu 20.04 LTS in order to develop user-mode C programs to
 perform I/O on USB devices; and secondly, to demonstrate complete
 programs that actually work. My test USB device is a [Microsoft Xbox
 Wireless Controller](https://en.wikipedia.org/wiki/Xbox_Wireless_Controller)
-(model 1708), which is attached to my Linux machine with a micro USB cable.
+(model 1708), which is connected to my Linux machine with a USB cable.
 
 ### Prerequisites
 - These programs were developed and tested on Ubuntu 20.04 LTS.
