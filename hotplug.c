@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <libusb-1.0/libusb.h>
-#include "common.h"
+#include "usb-common.h"
 
 enum {
     EVENT_QUIT               = 1,

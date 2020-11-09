@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libusb-1.0/libusb.h>
-#include "common.h"
+#include "usb-common.h"
 
 static void do_sync_interrupt_transfer(libusb_device_handle *devh)
 {

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "common.h"
+#include "usb-common.h"
 
 const uint16_t VENDOR_ID = 0x045e;
 const uint16_t PRODUCT_ID = 0x02ea;

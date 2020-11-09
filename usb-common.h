@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef USB_COMMON_H
+#define USB_COMMON_H
 
 #include <libusb-1.0/libusb.h>
 
@@ -42,10 +42,9 @@ void print_libusb_version(void);
 char *join(int len, const uint8_t nums[], char str[]);
 void print_port_path(libusb_device_handle *devh);
 void printhex(int len, const uint8_t data[]);
-
 void data_to_gamepad(const uint8_t data[18], struct gamepad_t *gamepad);
 void print_gamepad(const struct gamepad_t *gamepad);
 int init_device(libusb_device_handle *devh);
 int rumble(libusb_device_handle *devh, uint8_t left, uint8_t right);
 
-#endif // COMMON_H
+#endif // USB_COMMON_H
