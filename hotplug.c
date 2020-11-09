@@ -130,8 +130,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
-        LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, 0, VENDOR_ID, PRODUCT_ID,
+    rc = libusb_hotplug_register_callback(NULL,
+        LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
+        0, VENDOR_ID, PRODUCT_ID,
         LIBUSB_HOTPLUG_MATCH_ANY, hotplug_callback, &completed,
         &hotplug_callback_handle);
     if (rc != LIBUSB_SUCCESS) {
