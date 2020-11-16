@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall
+CFLAGS=-Wall -Werror
 LDLIBS=-lusb-1.0
 TARGETS=gamepad hotplug
 
