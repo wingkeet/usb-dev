@@ -68,7 +68,7 @@ int main(void)
     rc = libusb_set_auto_detach_kernel_driver(devh, 1);
     printf("libusb_set_auto_detach_kernel_driver() returned %d\n", rc);
 
-    // Claim interface 0 (the first) of device (mine had just 1)
+    // Claim interface 0 (the first) of device
     rc = libusb_claim_interface(devh, 0);
     if (rc != LIBUSB_SUCCESS) {
         fputs("Cannot claim interface\n", stderr);
