@@ -84,7 +84,7 @@ int main(void)
     do_sync_interrupt_transfer(devh);
 
     // Shutting down from here onwards
-    rc = libusb_release_interface(devh, 0); // release the claimed interface
+    libusb_release_interface(devh, 0); // release the claimed interface
     libusb_close(devh); // close the device we opened
     libusb_exit(NULL); // deinitialize libusb
     puts("bye");
