@@ -85,9 +85,8 @@ int main(void)
 
     // Shutting down from here onwards
     rc = libusb_release_interface(devh, 0); // release the claimed interface
-    rc == LIBUSB_SUCCESS ? puts("Released interface") :
-        fputs("Cannot release interface\n", stderr);
     libusb_close(devh); // close the device we opened
     libusb_exit(NULL); // deinitialize libusb
+    puts("bye");
     return EXIT_SUCCESS;
 }
