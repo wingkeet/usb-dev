@@ -32,6 +32,9 @@ static int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx,
     libusb_get_device_descriptor(dev, &desc);
 
     if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
+        // NOTE: Most functions that take a libusb_device_handle are not safe
+        // to call. Examples of such functions are any of the synchronous API
+        // functions or the blocking functions that retrieve various USB descriptors.
         rc = libusb_open(dev, &devh);
         if (rc != LIBUSB_SUCCESS) {
             fputs("Could not open USB device\n", stderr);
@@ -39,6 +42,7 @@ static int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx,
         *completed = EVENT_DEVICE_ARRIVED;
     }
     else if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT) {
+        // NOTE: The only safe function is libusb_get_device_descriptor().
         if (devh != NULL) {
             libusb_close(devh);
             devh = NULL;
