@@ -83,7 +83,7 @@ Read successful! 18 bytes: 2000270E5000000000002FFDF8FE2DFE8FF3
   trigger left,right: 0,0
   lstick x,y: -721,-264
   rstick x,y: -467,-3185
-Released interface
+bye
 ```
 
 ### License
