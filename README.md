@@ -98,5 +98,4 @@ restrictions and you are free to do whatever you want with it.
 - https://github.com/paroj/xpad
 - https://github.com/quantus/xbox-one-controller-protocol
 - https://docs.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
-- https://en.wikipedia.org/wiki/Xbox_One_controller
 - https://support.xbox.com/help/hardware-network/controller/xbox-one-wireless-controller
