@@ -22,8 +22,11 @@ static libusb_hotplug_callback_handle hotplug_callback_handle = 0;
 static int completed = 0;
 
 // http://libusb.sourceforge.net/api-1.0/libusb_hotplug.html
-static int LIBUSB_CALL hotplug_callback(struct libusb_context *ctx,
-    struct libusb_device *dev, libusb_hotplug_event event, void *user_data)
+static int LIBUSB_CALL hotplug_callback(
+    __attribute__((unused)) struct libusb_context *ctx,
+    struct libusb_device *dev,
+    libusb_hotplug_event event,
+    void *user_data)
 {
     struct libusb_device_descriptor desc;
     int rc;

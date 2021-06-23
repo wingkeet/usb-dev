@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Werror
+CFLAGS=-Wall -Werror -Wextra -pedantic
 LDLIBS=-lusb-1.0
 TARGETS=gamepad hotplug
 
