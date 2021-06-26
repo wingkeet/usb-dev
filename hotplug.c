@@ -35,9 +35,10 @@ static int LIBUSB_CALL hotplug_callback(
     libusb_get_device_descriptor(dev, &desc);
 
     if (event == LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED) {
-        // NOTE: Most functions that take a libusb_device_handle are not safe
-        // to call. Examples of such functions are any of the synchronous API
-        // functions or the blocking functions that retrieve various USB descriptors.
+        // NOTE: Most functions that take a libusb_device_handle are
+        // not safe to call. Examples of such functions are any of the
+        // synchronous API functions or the blocking functions that
+        // retrieve various USB descriptors.
         rc = libusb_open(dev, &devh);
         if (rc != LIBUSB_SUCCESS) {
             fputs("Could not open USB device\n", stderr);
@@ -85,10 +86,12 @@ static void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
         }
     }
     else if (transfer->status == LIBUSB_TRANSFER_CANCELLED) {
-        // User pressed CTRL+C
+        // This was triggered by the call to libusb_cancel_transfer()
+        // in signal_handler().
         *completed = EVENT_QUIT;
     }
     else {
+        // User detached device. This is invoked before hotplug_callback().
         fprintf(stderr, "Transfer failed with status = %s\n",
             libusb_error_name(transfer->status));
     }
@@ -97,10 +100,13 @@ static void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
 static void signal_handler(int signum)
 {
     if (signum == SIGINT) {
+        // User pressed CTRL+C
         if (devh != NULL) {
+            // A device is present
             libusb_cancel_transfer(transfer);
         }
         else {
+            // No device is present
             completed = EVENT_QUIT;
             libusb_interrupt_event_handler(NULL);
         }
@@ -158,12 +164,16 @@ int main(void)
         rc = libusb_set_auto_detach_kernel_driver(devh, 1);
         rc = libusb_claim_interface(devh, 0);
         rc = init_device(devh);
-        libusb_fill_interrupt_transfer(transfer, devh, (2 | LIBUSB_ENDPOINT_IN),
+        libusb_fill_interrupt_transfer(transfer, devh,
+            (2 | LIBUSB_ENDPOINT_IN),
             data, sizeof(data), transfer_callback, &completed, 0);
         rc = libusb_submit_transfer(transfer);
     }
+    else {
+        puts("Device not found; attach device to begin");
+    }
 
-    // Read forever until button X is pressed
+    // Loop forever until user presses button X or CTRL+C
     while (1) {
         completed = 0;
 
@@ -181,7 +191,8 @@ int main(void)
             rc = libusb_set_auto_detach_kernel_driver(devh, 1);
             rc = libusb_claim_interface(devh, 0);
             rc = init_device(devh);
-            libusb_fill_interrupt_transfer(transfer, devh, (2 | LIBUSB_ENDPOINT_IN),
+            libusb_fill_interrupt_transfer(transfer, devh,
+                (2 | LIBUSB_ENDPOINT_IN),
                 data, sizeof(data), transfer_callback, &completed, 0);
             rc = libusb_submit_transfer(transfer);
         }
