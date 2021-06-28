@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 600
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -100,7 +101,7 @@ static void LIBUSB_CALL transfer_callback(struct libusb_transfer *transfer)
 static void signal_handler(int signum)
 {
     if (signum == SIGINT) {
-        // User pressed CTRL+C
+        // User pressed CTRL-C
         if (devh != NULL) {
             // A device is present
             libusb_cancel_transfer(transfer);
@@ -116,7 +117,8 @@ static void signal_handler(int signum)
 static int register_signal_handler(void)
 {
     struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
     sa.sa_handler = signal_handler;
     return sigaction(SIGINT, &sa, NULL);
 }
@@ -173,7 +175,7 @@ int main(void)
         puts("Device not found; attach device to begin");
     }
 
-    // Loop forever until user presses button X or CTRL+C
+    // Loop forever until user presses button X or CTRL-C
     while (1) {
         completed = 0;
 
